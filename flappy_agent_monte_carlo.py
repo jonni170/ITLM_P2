@@ -27,10 +27,10 @@ class FlappyAgent:
 
     def discretise(self, state):
         return (
-            int(state['player_y'] / 512 * 15.0),
-            int(state['player_vel']),
-            int(state['next_pipe_top_y'] / 512 * 15.0),
-            int(state['next_pipe_dist_to_player'] / 512 * 15.0)
+            int(state['player_y']/(512/15)),
+            int(state['player_vel']/(19/15)),
+            int(state['next_pipe_top_y']/(512/15)),
+            int(state['next_pipe_dist_to_player']/(288/15))
         )
     def observe(self, s1, a, r, s2, end, score):
         """ this function is called during training on each step of the game where
@@ -44,7 +44,7 @@ class FlappyAgent:
         if s1 not in self.q.keys():
             self.q.update({s1:{0:0,1:0}})
         qval0 = self.q[s1][0] + self.alpha * (score - self.q[s1][0])
-        qval1 = self.q[s1][1] + self.alpha * (score - self.q[s1][1])
+        qval1 = self.q[s1][1]
         self.q.update({s1: {0:qval0, 1:qval1}})
         return
 
@@ -169,6 +169,6 @@ def run_game(nb_episodes, agent):
 
 
 agent = FlappyAgent()
-train_game(100000, agent)
+train_game(30000, agent)
 #run_game(20, agent)
 plt.show(sns.barplot(x=agent.plotx, y=agent.ploty))
