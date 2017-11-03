@@ -10,7 +10,7 @@ class FlappyAgent:
         # TODO: you may need to do some initialization for your agent here
         self.q = {}
         self.alpha = 0.1
-        self.discount = 0.95
+        self.discount = 0.5
         self.frameCounter = 0
         self.results = []
         self.ploty = []
@@ -29,10 +29,10 @@ class FlappyAgent:
 
     def discretise(self, state):
         return (
-            int(state['player_y'] / 512 * 15.0),
-            int(state['player_vel']),
-            int(state['next_pipe_top_y'] / 512 * 15.0),
-            int(state['next_pipe_dist_to_player'] / 512 * 15.0)
+            int(state['player_y']/(512/15)),
+            int(state['player_vel']/(19/15)),
+            int(state['next_pipe_top_y']/(512/15)),
+            int(state['next_pipe_dist_to_player']/(288/15))
         )
 
     def observe(self, s1, a, r, s2, end):
@@ -44,12 +44,14 @@ class FlappyAgent:
             subsequent steps in the same episode. That is, s1 in the second call will be s2
             from the first call.
             """
+        s1 = self.discretise(s1)
+        s2 = self.discretise(s2)
         if s1 not in self.q.keys():
             self.q.update({s1: {0: 0, 1: 0}})
         if s2 not in self.q.keys():
             self.q.update({s2: {0: 0, 1: 0}})
-        qval0 = (self.q[s1][0]*(1-self.alpha)) + (self.alpha*(r + self.discount*max(self.q[s2][0],self.q[s2][1])))
-        qval1 = (self.q[s1][1]*(1-self.alpha)) + (self.alpha*(r + self.discount*max(self.q[s2][0],self.q[s2][1])))
+        qval0 = (self.q[s1][0]*(1-self.alpha)) + (self.alpha*(r + max(self.q[s2][0],self.q[s2][1])))
+        qval1 = (self.q[s1][1]*(1-self.alpha)) + (self.alpha*(r + max(self.q[s2][0],self.q[s2][1])))
         self.q.update({s1: {0: qval0, 1: qval1}})
         return
 
@@ -59,7 +61,7 @@ class FlappyAgent:
 
             training_policy is called once per frame in the game while training
         """
-        # print("state: %s" % state)
+        state = self.discretise(state)
         # TODO: change this to to policy the agent is supposed to use while training
         # At the moment we just return an action uniformly at random.
         greedy = True
@@ -72,8 +74,10 @@ class FlappyAgent:
         if greedy:
             if self.q[state][0] < self.q[state][1]:
                 action = 1
+                print(self.q[state], "wubbalubbadubdub scoobydoo longfuckingwords", self.q[state], state)
             elif self.q[state][0] > self.q[state][1]:
                 action = 0
+                print(self.q[state])
         return action
 
     def policy(self, state):
@@ -113,27 +117,28 @@ def train_game(nb_episodes, agent):
     while nb_episodes > 0:
         # pick an action
         # TODO: for training using agent.training_policy instead
-        previousState = agent.discretise(env.game.getGameState())
+        previousState = env.game.getGameState()
         action = agent.training_policy(previousState)
         # step the environment
         reward = env.act(env.getActionSet()[action])
         # TODO: for training let the agent observe the current state transition
-        agent.observe(previousState, action, reward, agent.discretise(env.game.getGameState()), env.game_over())
+        agent.observe(previousState, action, reward, env.game.getGameState(), env.game_over())
 
         score += reward
-        agent.results.append(score)
-        agent.frameCounter += 1
-        if agent.frameCounter % 5000 == 0 and agent.frameCounter != 0:
-            sum = 0
-            for x in range(len(agent.results)):
-                sum += agent.results[x]
-            avg = sum / 5000
-            agent.ploty.append(avg)
-            agent.plotx.append(agent.frameCounter)
-            agent.results = []
+        #agent.results.append(score)
+        #agent.frameCounter += 1
+        #if agent.frameCounter % 5000 == 0 and agent.frameCounter != 0:
+        #    sum = 0
+        #    for x in range(len(agent.results)):
+        #        sum += agent.results[x]
+        #    avg = sum / 5000
+        #    agent.ploty.append(avg)
+        #    agent.plotx.append(agent.frameCounter)
+        #    agent.results = []
         # reset the environment if the game is over
         if env.game_over():
-            print("score for this episode: %d" % score)
+            if score > -5:
+                print(score, " ", nb_episodes)
             env.reset_game()
             nb_episodes -= 1
             score = 0
@@ -169,13 +174,18 @@ def run_game(nb_episodes, agent):
         score += reward
         # reset the environment if the game is over
         if env.game_over():
-            print("score for this episode: %d" % score)
+            if score > -5:
+                print(score, " ", nb_episodes)
             env.reset_game()
             nb_episodes -= 1
             score = 0
 
 
 agent = FlappyAgent()
-train_game(30000, agent)
-run_game(20, agent)
-plt.show(sns.barplot(x=agent.plotx, y=agent.ploty))
+train_game(400000, agent)
+for stuff in agent.q:
+    if agent.q[stuff][0] < 0:
+        print(stuff, agent.q[stuff])
+    if agent.q[stuff][0] > 0:
+        print(stuff, agent.q[stuff])
+#plt.show(sns.barplot(x=agent.plotx, y=agent.ploty))
