@@ -55,8 +55,7 @@ class FlappyAgent:
         if a == 1:
             b = 0
         qval0 = (self.q[s1][a]*(1-self.alpha)) + (self.alpha*(r + max(self.q[s2][0],self.q[s2][1])))
-        #only there because dictionary entries must both be updated or they will become null
-        qval1 = (self.q[s1][b])
+        qval1 = (self.q[s1][b]*(1-self.alpha))
         self.q.update({s1: {a: qval0, b: qval1}})
         return
 
@@ -176,6 +175,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = FlappyAgent()
-train_game(12000, agent)
+train_game(40000, agent)
 run_game(100, agent)
 plt.show(sns.barplot(x=agent.plotx, y=agent.ploty))

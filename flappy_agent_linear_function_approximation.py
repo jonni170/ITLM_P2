@@ -176,6 +176,6 @@ def run_game(nb_episodes, agent):
             score = 0
 
 agent = FlappyAgent()
-train_game(12000, agent)
+train_game(40000, agent)
 run_game(100, agent)
 plt.show(sns.barplot(x=agent.plotx, y=agent.ploty))
